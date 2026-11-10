@@ -6,7 +6,7 @@ order: 40
 audience: [user, operator]
 status: stable
 related: [operations/exposing-beyond-localhost, operations/backup-and-restore, lucius/permissions]
-keywords: [security, privacy, auth, password, API token, PBKDF2, data, local, self-hosted, telemetry, outbound, hide amounts, problem report]
+keywords: [security, privacy, auth, password, wallet, MetaMask, Rabby, Sign-In with Ethereum, web3, API token, PBKDF2, data, local, self-hosted, telemetry, outbound, hide amounts, problem report]
 ---
 
 # Security and privacy
@@ -56,6 +56,29 @@ One password, set in **Settings → Security** — there are no separate user ac
   behind a private network you fully trust.
 - **Forgot the password?** Reset it on the machine itself — in the desktop app, or with
   `onw reset-password` on a server. See [I lost my password](../troubleshooting/lost-password.md).
+
+### Signing in with a wallet
+
+You can also sign in with an Ethereum wallet — MetaMask, Rabby, Coinbase Wallet or any browser
+wallet — beside your password, never instead of it.
+
+- **Link it** in **Settings → Security → Wallet sign-in**: enter your current password, click
+  **Link wallet**, pick the wallet if you have more than one installed, and approve the signature
+  request. Only one wallet can be linked; linking another replaces it.
+- **Sign in** from the login screen with **Sign in with wallet**. The button appears only once a
+  wallet is linked, and the login screen never shows which address it is.
+- **Signing is free and moves nothing.** Your wallet shows a standard "Sign-In with Ethereum"
+  message naming this site; it is not a transaction, costs no gas and gives the app no access to
+  your funds. Each request is valid for 5 minutes and works only once.
+- A signature from any other wallet is refused and counts toward the same five-attempt lockout as
+  a wrong password.
+- **From another device**, the address you open the app at must be one it answers to: `localhost`,
+  a hostname in `CORS_ORIGINS`, or one you add to `ONW_ALLOWED_HOSTS` (for example
+  `ONW_ALLOWED_HOSTS=money.example.org`). Otherwise wallet sign-in says "host not allowed". This
+  is what stops a look-alike site from collecting a signature your wallet would accept here.
+- **Unlink wallet** (same panel, asks for the current password) turns wallet sign-in off.
+  Removing the password, or resetting it with `onw reset-password`, unlinks the wallet too, and a
+  wallet can't be linked until a password is set. On the public demo, wallet sign-in is switched off.
 
 ### The API token
 

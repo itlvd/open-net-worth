@@ -97,6 +97,7 @@ from backend.api.alpaca_api import router as alpaca_router
 from backend.api.artifacts import router as artifacts_router
 from backend.api.assets_api import router as assets_router
 from backend.api.auth import router as auth_router
+from backend.api.auth_wallet import router as auth_wallet_router
 from backend.api.automations import router as automations_router
 from backend.api.backup import router as backup_router
 from backend.api.briefing import router as briefing_router
@@ -1139,6 +1140,7 @@ from backend.core.config import gateway_active
 app.add_middleware(GatewayTokenMiddleware)
 
 app.include_router(auth_router)
+app.include_router(auth_wallet_router)
 app.include_router(prices_router)
 app.include_router(market_ticker_router)
 app.include_router(portfolio_router)

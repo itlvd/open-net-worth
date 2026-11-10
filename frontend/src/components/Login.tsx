@@ -3,13 +3,22 @@ import { authFetch } from '../api/client'
 import { tooManyAttemptsMessage } from '../api/rateLimit'
 import { useBrand } from '../brand-context'
 import { PasswordField } from './ui'
+import { WalletButton } from './WalletButton'
+import type { SignedChallenge } from '../api/wallet'
 
 // Full-screen pre-app gate (P3-AUTH S3). Rendered by App.tsx INSTEAD of the
 // tabs/sidebar/chat when auth is required and this request isn't authenticated.
 // On success the server sets the HttpOnly `onw_session` cookie; we call back to
 // App.tsx to re-check GET /api/auth/status and render the app.
 
-export function Login({ onAuthenticated }: { onAuthenticated: () => void }) {
+export function Login({
+  onAuthenticated,
+  walletLogin = false,
+}: {
+  onAuthenticated: () => void
+  /** A wallet is linked (GET /api/auth/status `wallet_login`): offer wallet sign-in too. */
+  walletLogin?: boolean
+}) {
   const brand = useBrand()
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -47,6 +56,32 @@ export function Login({ onAuthenticated }: { onAuthenticated: () => void }) {
     } catch {
       setError('Could not reach the server. Try again.')
       setSubmitting(false)
+    }
+  }
+
+  async function walletSubmit({ nonce, signature }: SignedChallenge) {
+    setError(null)
+    try {
+      const res = await authFetch('/api/auth/wallet/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nonce, signature }),
+      })
+      if (res.status === 401) {
+        setError("This wallet isn't linked to this instance")
+        return
+      }
+      if (res.status === 429) {
+        setError(tooManyAttemptsMessage(res))
+        return
+      }
+      if (!res.ok) {
+        setError(`Wallet sign-in failed (HTTP ${res.status})`)
+        return
+      }
+      onAuthenticated()
+    } catch {
+      setError('Could not reach the server. Try again.')
     }
   }
 
@@ -88,6 +123,19 @@ export function Login({ onAuthenticated }: { onAuthenticated: () => void }) {
         >
           {submitting ? 'Signing in…' : 'Sign in'}
         </button>
+        {walletLogin && (
+          <>
+            <div className="login-divider">or</div>
+            <WalletButton
+              purpose="login"
+              label="Sign in with wallet"
+              className="btn-secondary login-submit"
+              disabled={submitting}
+              onSigned={walletSubmit}
+              onError={setError}
+            />
+          </>
+        )}
         <p className="login-help">
           Lost your password? In the desktop app, set a new one in Settings → Security. On a server,
           run <code>onw reset-password</code> on that machine.{' '}

@@ -49,6 +49,20 @@ def test_stdin_password_sets_hash_and_rotates_session_key(db_isolated, monkeypat
     assert "API token was not rotated" in out and "Rotate" in out
 
 
+def test_reset_unlinks_a_sign_in_wallet(db_isolated, monkeypatch, capsys):
+    from backend.db.auth_store import AuthStore
+
+    store = AuthStore()
+    store.set_password_hash(security.hash_password("forgotten-one"))
+    store.set_wallet_address("0x00000000000000000000000000000000000000A1")
+    monkeypatch.setattr("sys.stdin", _Stdin(b"a-new-password\n"))
+
+    assert main(["reset-password", "--password-stdin"]) == 0
+
+    assert AuthStore().wallet_address() == ""
+    assert "wallet linked for sign-in was unlinked" in capsys.readouterr().out
+
+
 def test_prompt_path_confirms_and_rejects_a_mismatch(db_isolated, monkeypatch, capsys):
     from backend.db.auth_store import AuthStore
 
