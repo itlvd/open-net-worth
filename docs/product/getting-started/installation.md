@@ -23,6 +23,14 @@ All three keep your data in one folder, `~/.open-net-worth/`, outside the app it
 or reinstalling the app never touches it. There is no account to create and no `.env` file to
 write.
 
+## Fork server deployments
+
+This fork publishes a server image for Linux AMD64 and ARM64 after CI passes on main.
+Desktop installers shown below are upstream distributions; this fork does not build them.
+Production automation deploys an image digest over verified SSH, keeps runtime secrets on
+the server, snapshots persistent volumes before updating, and waits for a healthy container.
+Setup instructions are in `docs/DEPLOYMENT.md` in the repository.
+
 ## Supported platforms
 
 | Platform | Desktop app | Server (`onw`) | Docker |

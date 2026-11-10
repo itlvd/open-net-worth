@@ -1,0 +1,35 @@
+# Runtime secrets stay in the server's .env. Never commit that file.
+services:
+  app:
+    image: ${ONW_IMAGE:?ONW_IMAGE must be an image digest}
+    container_name: open-net-worth
+    ports:
+      - "127.0.0.1:${PORT:-8080}:8080"
+    env_file:
+      - .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: '8080'
+      ONW_ROOT: /home/onw/.open-net-worth
+      AUTH_PASSWORD: ${AUTH_PASSWORD:?AUTH_PASSWORD is required}
+    volumes:
+      - onw-data:/home/onw/.open-net-worth
+      - onw-codex:/home/onw/.codex
+      - onw-claude:/home/onw/.claude
+      - onw-opencode:/home/onw/.local/share/opencode
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+
+volumes:
+  onw-data:
+    name: open-net-worth-data
+  onw-codex:
+    name: open-net-worth-codex
+  onw-claude:
+    name: open-net-worth-claude
+  onw-opencode:
+    name: open-net-worth-opencode

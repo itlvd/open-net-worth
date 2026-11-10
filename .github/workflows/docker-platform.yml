@@ -1,0 +1,84 @@
+name: Native Docker build
+
+on:
+  workflow_call:
+    inputs:
+      arch:
+        required: true
+        type: string
+      runner:
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+      - name: Image coordinates
+        id: image
+        env:
+          REVISION: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+          echo "revision=$REVISION" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          platforms: linux/${{ inputs.arch }}
+          load: true
+          push: false
+          tags: onw:smoke
+          cache-from: type=gha,scope=server-${{ inputs.arch }}
+          cache-to: type=gha,mode=max,scope=server-${{ inputs.arch }}
+          provenance: false
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ steps.image.outputs.revision }}
+      - name: Boot native image and probe API, SPA and docs
+        run: |
+          docker run -d --name onw-smoke -e AUTH_PASSWORD=ci -p 127.0.0.1:8090:8080 onw:smoke
+          for _ in $(seq 1 120); do
+            curl -fsS http://127.0.0.1:8090/api/health >/dev/null 2>&1 && break
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8090/api/health | grep -q '"version"'
+          curl -fsS http://127.0.0.1:8090/ | grep -q 'id="root"'
+          curl -fsS http://127.0.0.1:8090/docs/ | grep -qi '<html'
+          AUTH_PASSWORD=ci docker compose config --quiet
+          ONW_IMAGE=onw:smoke AUTH_PASSWORD=ci docker compose -f deploy/production/compose.yml config --quiet
+      - name: Container diagnostics
+        if: failure()
+        run: docker logs onw-smoke || true
+      - name: Remove smoke container
+        if: always()
+        run: docker rm -f onw-smoke >/dev/null 2>&1 || true
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        if: github.event_name == 'workflow_run'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Push the exact tested image
+        if: github.event_name == 'workflow_run'
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+          ARCH: ${{ inputs.arch }}
+        run: |
+          tag="$IMAGE:build-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$ARCH"
+          docker tag onw:smoke "$tag"
+          docker push "$tag"
+          mkdir -p digests
+          docker image inspect "$tag" --format '{{index .RepoDigests 0}}' > "digests/$ARCH.txt"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: github.event_name == 'workflow_run'
+        with:
+          name: digest-${{ inputs.arch }}
+          path: digests/*.txt
+          retention-days: 1
+          if-no-files-found: error

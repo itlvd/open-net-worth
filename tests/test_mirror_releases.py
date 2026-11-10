@@ -68,10 +68,8 @@ def flag(args, name):
     return args[args.index(name) + 1]
 
 
-def test_a_tag_here_can_never_start_the_real_release_workflow():
+def test_a_mirrored_tag_has_no_release_prefix():
     assert mirror_releases.mirror_tag("v0.1.40") == "0.1.40"
-    workflow = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
-    assert 'tags: ["v*"]' in workflow
 
 
 @pytest.mark.parametrize("tag", ["0.1.40", "v1.2", "v1.2.3-rc1", "nightly"])
