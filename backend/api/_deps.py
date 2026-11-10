@@ -56,6 +56,9 @@ _EXEMPT: set = {
     ("POST", "/api/auth/login"),
     ("POST", "/api/auth/logout"),  # clearing a cookie must never itself require auth
     ("GET", "/api/auth/status"),
+    # Wallet sign-in: the login screen asks for a challenge and posts its signature, signed out.
+    ("POST", "/api/auth/wallet/challenge"),
+    ("POST", "/api/auth/wallet/login"),
     ("GET", "/api/health"),
     ("GET", "/api/config"),
     # A phone scanning a QR has no session — a short-lived ticket is the credential.

@@ -8,6 +8,7 @@ import type { SectionProps } from '../ds'
 import { GatewayAccountPanel } from './GatewayAccountPanel'
 import { PasswordPanel } from './PasswordPanel'
 import type { PasswordState } from './PasswordPanel'
+import { WalletPanel } from './WalletPanel'
 
 interface AuthSettings {
   session_ttl: number
@@ -15,7 +16,7 @@ interface AuthSettings {
   auth_disabled: boolean
 }
 
-type AuthState = AuthSettings & PasswordState
+type AuthState = AuthSettings & PasswordState & { wallet_address?: string }
 
 interface ApiToken {
   token: string
@@ -119,6 +120,7 @@ export function SecuritySection({ toast, gatewayMode = false }: SectionProps) {
     <>
       {gatewayMode && <GatewayAccountPanel />}
       {!gatewayMode && <PasswordPanel state={settings} refresh={refreshSettings} toast={toast} />}
+      {!gatewayMode && <WalletPanel state={settings} refresh={refreshSettings} toast={toast} />}
 
       <Panel
         title="API token"

@@ -65,6 +65,7 @@ _LOCKED: tuple[_Rule, ...] = (
         r"^/api/connectors/[^/]+/secret/[^/]+$",
         r"^/api/shortcuts/(setup|file|setup-code)(/[^/]+)?$",
         r"^/api/auth/api-token(/rotate)?$",
+        r"^/api/auth/wallet(/.*)?$",
     ),
     *_rules(
         _WRITE,

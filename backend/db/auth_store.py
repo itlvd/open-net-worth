@@ -2,7 +2,8 @@
 
 A single dict (NOT a list) holding the in-app-changeable auth state:
 ``password_hash``, ``session_signing_key``, ``api_token``, ``session_ttl``,
-``trust_loopback``, and ``auth_disabled``.
+``trust_loopback``, ``auth_disabled`` and ``wallet_address`` (the one Ethereum address
+allowed to sign in with its wallet; ``""`` = wallet sign-in off).
 
 Seeding/materialisation order (first access): for each secret use the stored
 value if present, else seed from the corresponding env, else generate.
@@ -111,6 +112,11 @@ class AuthStore(NamespacedSettingsStore):
             auth_disabled = settings.auth_disabled
             dirty = True
 
+        # Wallet address: store only, never seeded from env ("" = wallet sign-in off).
+        wallet = data.get("wallet_address")
+        if not isinstance(wallet, str):
+            wallet = ""
+
         materialised = {
             "password_hash": pw_hash,
             "session_signing_key": signing_key,
@@ -118,6 +124,7 @@ class AuthStore(NamespacedSettingsStore):
             "session_ttl": session_ttl,
             "trust_loopback": trust_loopback,
             "auth_disabled": auth_disabled,
+            "wallet_address": wallet,
         }
         if dirty:
             self._write(materialised)
@@ -135,7 +142,7 @@ class AuthStore(NamespacedSettingsStore):
         self._write(data)
         return data
 
-    def replace_password(self, password_hash: str) -> None:
+    def replace_password(self, password_hash: str, *, clear_wallet: bool = False) -> None:
         """Set a new password AND rotate the session signing key in one serialized write.
 
         Rotating the key is what signs every other browser out, so the two must land
@@ -147,11 +154,22 @@ class AuthStore(NamespacedSettingsStore):
             data = super().get(conn=conn)
             data["password_hash"] = password_hash
             data["session_signing_key"] = generate_token()
+            if clear_wallet:
+                data["wallet_address"] = ""
             self.save(data, conn=conn)
 
     def remove_password(self) -> None:
-        """Clear the password (the instance is "not configured" again) and sign everyone out."""
-        self.replace_password("")
+        """Clear the password (the instance is "not configured" again) and sign everyone out.
+
+        The linked wallet goes with it: wallet sign-in is a second way in beside a password,
+        never a credential of its own."""
+        self.replace_password("", clear_wallet=True)
+
+    def set_wallet_address(self, address: str) -> None:
+        """Link (checksummed address) or unlink (``""``) the wallet allowed to sign in."""
+        data = self.get()
+        data["wallet_address"] = address
+        self._write(data)
 
     def rotate_api_token(self) -> str:
         """Generate + persist a fresh API token; return it."""
@@ -179,6 +197,9 @@ class AuthStore(NamespacedSettingsStore):
 
     def auth_disabled(self) -> bool:
         return self.get()["auth_disabled"]
+
+    def wallet_address(self) -> str:
+        return self.get()["wallet_address"]
 
     def update_auth_settings(
         self,

@@ -118,6 +118,14 @@ def logout(response: Response):
     return {"ok": True}
 
 
+def _with_wallet_hint(store: AuthStore, body: dict) -> dict:
+    """Add ``wallet_login: true`` when the login screen should offer wallet sign-in — only
+    whether to show the button, never which address is linked."""
+    if body["required"] and store.wallet_address():
+        body["wallet_login"] = True
+    return body
+
+
 @router.get("/api/auth/status")
 def status(request: Request):
     """Report whether auth is required + whether THIS request is authenticated.
@@ -161,7 +169,7 @@ def status(request: Request):
     # Gateway pass-through: the proxy has NOT signed anyone in, so nothing here is "dormant" or
     # "trusted" — only a credential on this request counts.
     if passthrough:
-        return {"required": True, "authenticated": has_creds}
+        return _with_wallet_hint(store, {"required": True, "authenticated": has_creds})
 
     # Dormant (unconfigured): no login required; loopback is open, remote is gated
     # by the dependency — status itself reports "not required" so the SPA loads.
@@ -172,7 +180,7 @@ def status(request: Request):
 
     required = not trusted_loopback
     authenticated = has_creds or trusted_loopback
-    return {"required": required, "authenticated": authenticated}
+    return _with_wallet_hint(store, {"required": required, "authenticated": authenticated})
 
 
 @router.get("/api/auth/api-token")
@@ -288,6 +296,7 @@ def get_auth_settings(request: Request):
         "trust_loopback": store.trust_loopback(),
         "auth_disabled": store.auth_disabled(),
         "password_set": store.is_password_set(),
+        "wallet_address": store.wallet_address(),
         "current_password_required": _current_password_required(store, request),
     }
 

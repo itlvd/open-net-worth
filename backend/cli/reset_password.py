@@ -86,9 +86,12 @@ def run_reset_password(*, password_stdin: bool) -> int:
     ):
         return _no_book(data_dir)
 
-    AuthStore().replace_password(hash_password(password))
+    # The recovery path: whoever needed it may have lost more than the password, so a linked
+    # sign-in wallet is unlinked too (link it again in Settings -> Security).
+    AuthStore().replace_password(hash_password(password), clear_wallet=True)
     print(
         f"Password updated for the book in {data_dir}. Every signed-in session was signed out.\n"
+        "Any wallet linked for sign-in was unlinked.\n"
         "The API token was not rotated; to rotate it, use Settings -> Security -> Rotate."
     )
     return 0

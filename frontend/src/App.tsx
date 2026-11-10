@@ -24,6 +24,8 @@ interface AuthStatus {
   /** `gateway`: a trusted proxy owns sign-in (ONW_GATEWAY_TOKEN). `demo`: a public demo that
    * needs no password (DEMO_OPEN_ACCESS). Either way the SPA has no login of its own. */
   mode?: 'gateway' | 'demo'
+  /** A wallet is linked, so the login screen offers "Sign in with wallet". */
+  wallet_login?: boolean
 }
 
 // ── Optimistic auth (2026-07-27) ─────────────────────────────────────────────
@@ -107,6 +109,7 @@ export default function App() {
           required: !!s.required,
           authenticated: !!s.authenticated,
           ...(knownMode(s.mode) && { mode: knownMode(s.mode) }),
+          ...(s.wallet_login === true && { wallet_login: true }),
         }
         applyAuth(next)
         return next
@@ -172,7 +175,7 @@ export default function App() {
     )
   }
   if (auth.required && !auth.authenticated) {
-    return <Login onAuthenticated={checkAuthStatus} />
+    return <Login onAuthenticated={checkAuthStatus} walletLogin={auth.wallet_login === true} />
   }
   if (!auth.required && !auth.authenticated) {
     return <NoPasswordYet onRetry={checkAuthStatus} />
