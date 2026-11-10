@@ -189,8 +189,8 @@ Good to know:
 
 ### Option C — Docker
 
-**Fork CI/CD:** server images for AMD64 and ARM64 and private SSH deployment are documented in
-[the deployment guide](docs/DEPLOYMENT.md). This fork does not build desktop releases.
+**Fork CI:** server image builds for AMD64 and ARM64 are documented in
+[the Docker CI guide](docs/CI.md). This fork does not build desktop releases.
 
 **1. Download the Compose file** into an empty folder.
 

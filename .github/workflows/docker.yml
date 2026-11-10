@@ -98,12 +98,3 @@ jobs:
             docker buildx imagetools create -t "$image:latest" "$image@$digest"
           fi
           printf 'Published `%s@%s` (amd64 + arm64).\n' "$image" "$digest" >> "$GITHUB_STEP_SUMMARY"
-
-  deploy:
-    needs: publish
-    if: vars.AUTO_DEPLOY == 'true'
-    uses: ./.github/workflows/deploy.yml
-    with:
-      digest: ${{ needs.publish.outputs.digest }}
-      revision: ${{ github.event.workflow_run.head_sha }}
-    secrets: inherit
