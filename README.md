@@ -191,6 +191,7 @@ Good to know:
 
 **Fork CI:** server image builds for AMD64 and ARM64 are documented in
 [the Docker CI guide](docs/CI.md). This fork does not build desktop releases.
+Optional server auto-deployment is covered in [the deployment guide](docs/DEPLOYMENT.md).
 
 **1. Download the Compose file** into an empty folder.
 
