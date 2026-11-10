@@ -51,6 +51,7 @@ jobs:
           curl -fsS http://127.0.0.1:8090/ | grep -q 'id="root"'
           curl -fsS http://127.0.0.1:8090/docs/ | grep -qi '<html'
           AUTH_PASSWORD=ci docker compose config --quiet
+          ONW_IMAGE=onw:smoke AUTH_PASSWORD=ci docker compose -f deploy/production/compose.yml config --quiet
       - name: Container diagnostics
         if: failure()
         run: docker logs onw-smoke || true
