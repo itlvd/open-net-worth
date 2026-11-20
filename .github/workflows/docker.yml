@@ -3,7 +3,7 @@ name: Docker
 on:
   pull_request:
   push:
-    tags: ["docker-*"]
+    tags: ["[0-9]+.[0-9]+.[0-9]+"]
 
 permissions:
   contents: read

@@ -22,8 +22,8 @@ jobs:
         id: image
         run: |
           echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
-          if [[ "$GITHUB_EVENT_NAME" == push && ! "$GITHUB_REF_NAME" =~ ^docker-[A-Za-z0-9_][A-Za-z0-9_.-]{0,120}$ ]]; then
-            echo "::error::Use a Docker-compatible Git tag such as docker-1.0.0"
+          if [[ "$GITHUB_EVENT_NAME" == push && ${#GITHUB_REF_NAME} -gt 128 ]]; then
+            echo "::error::A Docker tag may contain at most 128 characters"
             exit 1
           fi
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1

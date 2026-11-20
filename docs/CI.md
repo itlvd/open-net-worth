@@ -1,6 +1,6 @@
 # Build Docker AMD64 và ARM64 từ fork
 
-Pull request chạy Docker smoke test trên hai runner native. Khi push tag `docker-*`,
+Pull request chạy Docker smoke test trên hai runner native. Khi push tag version dạng `X.Y.Z` như `1.0.0` hoặc `0.1.57`,
 GitHub Actions build từ commit được tag, khởi động từng image và kiểm tra API, giao diện
 web và trang docs. Khi cả hai bản pass, GHCR nhận một image có manifest cho Linux AMD64
 và ARM64. Docker chọn kiến trúc phù hợp khi pull.
@@ -13,12 +13,12 @@ bạn muốn deploy và push tag lên fork.
 ```bash
 git switch main
 git pull --ff-only origin main
-git tag -a docker-1.0.0 -m "Docker image 1.0.0"
-git push origin refs/tags/docker-1.0.0
+git tag -a 1.0.0 -m "Docker image 1.0.0"
+git push origin refs/tags/1.0.0
 ```
 
 Workflow **Docker** dùng `GITHUB_TOKEN` với quyền `packages: write`. Image có cùng tên tag
-với Git, ví dụ `ghcr.io/itlvd/open-net-worth:docker-1.0.0`. Actions hiển thị cả digest
+với Git, ví dụ `ghcr.io/itlvd/open-net-worth:1.0.0`. Actions hiển thị cả digest
 để bạn có thể deploy đúng nội dung đã build. Chờ job **publish** xanh trước khi pull.
 
 ## Deploy thủ công
@@ -27,7 +27,7 @@ Dùng `docker-compose.yml` từ fork. Đặt `AUTH_PASSWORD` trong `.env` trên 
 dòng image dưới đây.
 
 ```dotenv
-ONW_IMAGE=ghcr.io/itlvd/open-net-worth:docker-1.0.0
+ONW_IMAGE=ghcr.io/itlvd/open-net-worth:1.0.0
 ```
 
 Nếu package GHCR là private, đăng nhập `ghcr.io` trên server bằng PAT classic có

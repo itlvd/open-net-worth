@@ -189,7 +189,7 @@ Good to know:
 
 ### Option C — Docker
 
-**Fork CI:** push a `docker-*` Git tag to publish a Linux AMD64 and ARM64 server image to
+**Fork CI:** push a Git version tag such as `1.0.0` to publish a Linux AMD64 and ARM64 server image to
 GHCR. See [the Docker CI guide](docs/CI.md) for tagging and deploying it with Compose.
 
 **1. Download the Compose file** into an empty folder.
