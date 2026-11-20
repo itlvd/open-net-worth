@@ -25,7 +25,9 @@ write.
 
 ## Fork Docker images
 
-This fork publishes a server image for Linux AMD64 and ARM64 after CI passes on main.
+This fork publishes a Linux AMD64 and ARM64 server image to GHCR when you push a
+Git tag such as `docker-1.0.0`. To use it with the fork’s Compose file, set
+`ONW_IMAGE=ghcr.io/itlvd/open-net-worth:docker-1.0.0` in `.env`.
 Desktop installers shown below are upstream distributions; this fork does not build them.
 Build and registry setup instructions are in `docs/CI.md` in the repository.
 The build pipeline does not connect to or update a production server.

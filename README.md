@@ -189,8 +189,8 @@ Good to know:
 
 ### Option C — Docker
 
-**Fork CI:** server image builds for AMD64 and ARM64 are documented in
-[the Docker CI guide](docs/CI.md). This fork does not build desktop releases.
+**Fork CI:** push a `docker-*` Git tag to publish a Linux AMD64 and ARM64 server image to
+GHCR. See [the Docker CI guide](docs/CI.md) for tagging and deploying it with Compose.
 
 **1. Download the Compose file** into an empty folder.
 

@@ -1,46 +1,42 @@
-# CI cho fork: build Docker AMD64 và ARM64
+# Build Docker AMD64 và ARM64 từ fork
 
-Fork này chỉ publish server image; không build hoặc publish desktop, wheel hay release
-của upstream. `Dockerfile` vẫn dùng lockfile và hai TypeScript contract trong `desktop/`
-vì chúng là dependency của server/web, không phải build Electron.
+Pull request chạy Docker smoke test trên hai runner native. Khi push tag `docker-*`,
+GitHub Actions build từ commit được tag, khởi động từng image và kiểm tra API, giao diện
+web và trang docs. Khi cả hai bản pass, GHCR nhận một image có manifest cho Linux AMD64
+và ARM64. Docker chọn kiến trúc phù hợp khi pull.
 
-## Flow
+## Publish image
 
-1. Pull request: CI hiện có (privacy, lint, typecheck, tests, frontend, wheel smoke)
-   và Docker build/boot trên hai runner native `ubuntu-24.04` và `ubuntu-24.04-arm`.
-   PR dùng token read-only, không login registry hoặc push image.
-2. Push/merge vào `main`: CI phải thành công. `workflow_run` chỉ nhận run từ sự kiện
-   `push`, branch `main`, chính repo này; checkout đúng `head_sha` đã qua CI.
-3. Build cả `linux/amd64` và `linux/arm64`, boot từng image, probe API/SPA/docs.
-   Push đúng image đã test, tạo multi-arch manifest trên GHCR.
-4. Publish `ghcr.io/itlvd/open-net-worth:sha-<full-commit-sha>` và `latest`.
-   `latest` chỉ cập nhật nếu commit vẫn là HEAD của main. Các tag `build-*` là
-   artifact từng kiến trúc. Khi sử dụng image, ưu tiên digest để cố định nội dung.
+Bật GitHub Actions trên fork nếu cần. Sau khi workflow có trên `main`, tag commit
+bạn muốn deploy và push tag lên fork.
 
-Không có path filter: thay đổi backend/frontend/docs/lockfile đều được build.
-Giữ CI hiện có, kể cả wheel smoke, để không mất regression coverage; wheel không
-được publish. Xóa workflow desktop/release/mirror của upstream khỏi fork để không
-build desktop hay publish nhầm sang tài nguyên upstream.
+```bash
+git switch main
+git pull --ff-only origin main
+git tag -a docker-1.0.0 -m "Docker image 1.0.0"
+git push origin refs/tags/docker-1.0.0
+```
 
-Pipeline này dừng ở build/test/publish image; không chứa job deploy, SSH scripts,
-production Environment, server credentials hoặc cờ AUTO_DEPLOY.
+Workflow **Docker** dùng `GITHUB_TOKEN` với quyền `packages: write`. Image có cùng tên tag
+với Git, ví dụ `ghcr.io/itlvd/open-net-worth:docker-1.0.0`. Actions hiển thị cả digest
+để bạn có thể deploy đúng nội dung đã build. Chờ job **publish** xanh trước khi pull.
 
-## GitHub setup
+## Deploy thủ công
 
-- Bật Actions cho fork nếu GitHub đang disable. Merge PR build vào `main` để đăng ký
-  workflow; `workflow_run` được đọc từ default branch.
-- Giữ branch protection/ruleset cho main, yêu cầu CI và hai job Docker của PR.
-  Không cho người lạ quyền write workflows hoặc quyền merge không review.
-- Thêm repository Secret `PRIVACY_DENYLIST`: danh sách định danh riêng cần ngăn commit,
-  mỗi dòng một mục. CI upstream bắt buộc secret này trên push main; không bỏ privacy gate.
-- Package GHCR được publish bằng `GITHUB_TOKEN` với `packages: write`; không cần PAT để
-  build. Sau lần publish đầu, xác nhận package liên kết repo này và Actions có write access.
-  Package public/private là cấu hình riêng với repo public/private.
-- Không đưa runtime credentials vào source, build args hoặc public log. GitHub Variables
-  không được mask; mọi giá trị cần giữ kín phải dùng Secrets.
+Dùng `docker-compose.yml` từ fork. Đặt `AUTH_PASSWORD` trong `.env` trên server, rồi thêm
+dòng image dưới đây.
 
-## Kiểm chứng
+```dotenv
+ONW_IMAGE=ghcr.io/itlvd/open-net-worth:docker-1.0.0
+```
 
-PR phải có hai Docker native smoke jobs xanh. Sau merge cần CI xanh, rồi job publish
-xác minh manifest có đúng hai platforms Linux AMD64 và ARM64. Docker job summary cung
-cấp image digest. Production server có thể dùng digest này sau khi tự cấu hình deployment.
+Nếu package GHCR là private, đăng nhập `ghcr.io` trên server bằng PAT classic có
+`read:packages` và quyền đọc package. Package public có thể pull trực tiếp.
+
+```bash
+docker compose pull app
+docker compose up -d --no-build --wait app
+```
+
+Khi nâng version, tạo tag mới và cập nhật `ONW_IMAGE`. Giữ Compose project và các volumes
+hiện có để app tiếp tục dùng dữ liệu đã lưu.
